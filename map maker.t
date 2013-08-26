@@ -16,7 +16,9 @@ loop
 	exit when keys (KEY_ENTER)
 	put mx div 20 + 1, " ", my div 20 + 1
 
-	Font.Draw ("lmb-clear; mmb-water; rmb-wall; enter-next", 400 - Font.Width ("lmb-clear; mmb-water; rmb-wall; enter-next", defFontID) div 2, 603, defFontID, black)
+	Font.Draw ("left button: clear; middle button: water; right button: wall; enter: next", 400 - Font.Width ("left button: clear; middle button: water; right button: wall; enter: next",
+	    defFontID)
+	    div 2, 603, defFontID, black)
 	for i : 1 .. 40
 	    drawline (i * 20, 0, i * 20, 600, black)
 	end for
@@ -121,9 +123,9 @@ loop
 	Input.KeyDown (keys)
 	exit when keys ('p')
 	if keys ('q') then
-	    var numMaps : int := 0
+	    var numMaps : int := 1
 	    loop
-		exit when ~File.Exists (intstr (numMaps + 1) + ".map") or ~File.Exists (intstr (numMaps + 1) + ".bmp")
+		exit when ~File.Exists (intstr (numMaps) + ".map")
 		numMaps += 1
 	    end loop
 	    var file : int

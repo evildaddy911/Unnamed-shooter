@@ -1,4 +1,4 @@
-View.Set ("offscreenonly; graphics:1000,600")
+View.Set ("graphics:1000,600")
 
 var now, last :
     record
@@ -14,6 +14,7 @@ var player : array 1 .. 4 of
 	spawnX, spawnY : int % where player spawns
 	clr : int % which color to draw player in
 	angle : real % angle to shoot at
+	lastMove : int % which direction player moved last (used for AI)
     end record
 
 var file : int
@@ -50,6 +51,7 @@ for i : 1 .. 4
     player (i).nowX := player (i).spawnX
     player (i).nowY := player (i).spawnY
     player (i).angle := 0
+    player (i).lastMove := Rand.Int (1, 4)
 end for
 
 const dist : int := 8     % #squares player can move in one turn
@@ -57,6 +59,33 @@ const accuracy : real := 1     % #degrees [not used]
 var turn : int := 1     % whose turn it is
 var stage : int := 1     % which part of the turn it is (move / aim)
 var moves : int := dist     % how many moves left
+var numPlayers : int % how many human players
+var ans : string % used for text-based questions
+put "how many human players (1-4)?"
+loop
+    get ans
+    exit when strintok (ans) and strint (ans) >= 1 and strint (ans) <= 4
+    put "Invalid input. must be an integer from 1 to 4"
+end loop
+numPlayers := strint (ans)
+
+function realAngle (x1, y1, x2, y2 : real) : real
+    if x1 = x2 then
+	if y1 > y2 then
+	    result 270
+	elsif y1 < y2 then
+	    result 90
+	else
+	    result 0
+	end if
+    else
+	var temp : real := arctand ((y2 - y1) / (x2 - x1))
+	if x1 > x2 then
+	    temp += 180
+	end if
+	result temp
+    end if
+end realAngle
 
 procedure drawMap ()
     for i : 1 .. 40
@@ -83,7 +112,58 @@ procedure drawMap ()
 	end for
     end for
 end drawMap
+
+procedure AI (pNum : int)
+    moves := dist
+    loop
+	var direction : int := Rand.Int (1, 6)     % choose a random direction
+	if direction > 4 then     % 50% chance to repeat last move
+	    direction := player (pNum).lastMove
+	end if
+	case direction of     % move AI if valid move
+	    label 1 :
+		if grid (player (pNum).nowX, player (pNum).nowY + 1) >= 0 then
+		    player (pNum).nowY += 1
+		    player (pNum).lastMove := 1
+		    moves -= 1
+		end if
+	    label 2 :
+		if grid (player (pNum).nowX - 1, player (pNum).nowY) >= 0 then
+		    player (pNum).nowX -= 1
+		    player (pNum).lastMove := 2
+		    moves -= 1
+		end if
+	    label 3 :
+		if grid (player (pNum).nowX + 1, player (pNum).nowY) >= 0 then
+		    player (pNum).nowX += 1
+		    player (pNum).lastMove := 3
+		    moves -= 1
+		end if
+	    label 4 :
+		if grid (player (pNum).nowX, player (pNum).nowY - 1) >= 0 then
+		    player (pNum).nowY -= 1
+		    player (pNum).lastMove := 4
+		    moves -= 1
+		end if
+	end case
+	exit when moves <= 0
+    end loop
+
+    var target : int         % which player to target this turn
+    loop         % don't allow CPU to target itself
+	target := Rand.Int (1, 4)
+	exit when target ~= pNum
+    end loop
+
+    player (pNum).angle := realAngle (player (pNum).nowX, player (pNum).nowY, player (target).lastX, player (target).lastY)
+    player (pNum).angle += (Rand.Real - 0.5) * 40         % puts the shot up to 20 degrees off of the targeted player's previous position
+    stage += 1
+    moves := dist
+end AI
+
 var window : int
+
+View.Set ("offscreenonly")
 loop
 
     mousewhere (now.x, now.y, now.b)
@@ -196,6 +276,9 @@ loop
 
 	label :
 	    if turn = 4 then     % checks if its time to output the results
+		for i : numPlayers .. 4
+		    AI (i)
+		end for
 		for i : 1 .. 4
 		    % move players to their new positions
 		    player (i).lastX := player (i).nowX
