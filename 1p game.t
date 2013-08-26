@@ -8,6 +8,7 @@ var grid : array 1 .. 40, 1 .. 30 of int % 0=walkable; -1=bullets can pass; -2=w
 var player : array 1 .. 4 of
     record
 	deaths, kills : int % #times been shot; #shots hit
+	hit : boolean % if player has been hit this round
 	lastX, lastY : int % where player was last turn
 	nowX, nowY : int % where player is now
 	spawnX, spawnY : int % where player spawns
@@ -43,6 +44,7 @@ player (4).clr := brightcyan
 for i : 1 .. 4
     player (i).deaths := 0
     player (i).kills := 0
+    player (i).hit := false
     player (i).lastX := player (i).spawnX
     player (i).lastY := player (i).spawnY
     player (i).nowX := player (i).spawnX
@@ -50,7 +52,7 @@ for i : 1 .. 4
     player (i).angle := 0
 end for
 
-const dist : int := 10     % #squares player can move in one turn
+const dist : int := 8     % #squares player can move in one turn
 const accuracy : real := 1     % #degrees [not used]
 var turn : int := 1     % whose turn it is
 var stage : int := 1     % which part of the turn it is (move / aim)
@@ -221,12 +223,18 @@ loop
 			if j ~= i and Math.DistancePointLine (player (j).nowX * 20 - 10, player (j).nowY * 20 - 10, x, y, player (i).nowX * 20 - 10, player (i).nowY * 20 - 10) < 8 then
 			    player (i).kills += 1
 			    player (j).deaths += 1
-			    player (j).lastX := player (j).spawnX
-			    player (j).lastY := player (j).spawnY
-			    player (j).nowX := player (j).spawnX
-			    player (j).nowY := player (j).spawnY
+			    player (j).hit := true
 			end if
 		    end for
+		end for
+		for i : 1 .. 4 % respawn players (if needed) after shot calculation is finished
+		    if player (i).hit then
+			player (i).nowX := player (i).spawnX
+			player (i).nowY := player (i).spawnY
+			player (i).lastX := player (i).spawnX
+			player (i).lastY := player (i).spawnY
+		    end if
+		    player (i).hit := false
 		end for
 
 		% output the results
