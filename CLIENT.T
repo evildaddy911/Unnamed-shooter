@@ -22,6 +22,70 @@ player (1).clr := brightblue
 player (2).clr := brightred
 player (3).clr := brightgreen
 player (4).clr := brightcyan
+var emptyPic, waterPic, wallPic : int
+var playerPic : array 1 .. 4 of int
+
+procedure loadTexture (file : int) % loads the texture
+    View.Set ("invisible")
+    var empty_, water, wall : array 1 .. 10, 1 .. 10 of int
+    var player : array 1 .. 4, 1 .. 10, 1 .. 10 of int
+    for x : 1 .. 10
+	for y : 1 .. 10
+	    read : file, empty_ (x, y)
+	    read : file, water (x, y)
+	    read : file, wall (x, y)
+	    for i : 1 .. 4
+		read : file, player (i, x, y)
+	    end for
+	end for
+    end for
+    close : file
+
+    for tile : 1 .. 7
+	for x : 1 .. 10     % draws each square of the selected tile
+	    for y : 1 .. 10
+		case tile of
+		    label 1 :
+			drawfillbox (x * 2, y * 2, x * 2 + 2, y * 2 + 2, empty_ (x, y))
+		    label 2 :
+			drawfillbox (x * 2, y * 2, x * 2 + 2, y * 2 + 2, water (x, y))
+		    label 3 :
+			drawfillbox (x * 2, y * 2, x * 2 + 2, y * 2 + 2, wall (x, y))
+		    label 4 :
+			drawfillbox (x * 2, y * 2, x * 2 + 2, y * 2 + 2, player (1, x, y))
+		    label 5 :
+			drawfillbox (x * 2, y * 2, x * 2 + 2, y * 2 + 2, player (2, x, y))
+		    label 6 :
+			drawfillbox (x * 2, y * 2, x * 2 + 2, y * 2 + 2, player (3, x, y))
+		    label :
+			drawfillbox (x * 2, y * 2, x * 2 + 2, y * 2 + 2, player (4, x, y))
+		end case
+	    end for
+	end for
+	case tile of
+	    label 1 :
+		emptyPic := Pic.New (2, 2, 22, 22)
+	    label 2 :
+		waterPic := Pic.New (2, 2, 22, 22)
+	    label 3 :
+		wallPic := Pic.New (2, 2, 22, 22)
+	    label 4 :
+		playerPic (1) := Pic.New (2, 2, 22, 22)
+	    label 5 :
+		playerPic (2) := Pic.New (2, 2, 22, 22)
+	    label 6 :
+		playerPic (3) := Pic.New (2, 2, 22, 22)
+	    label :
+		playerPic (4) := Pic.New (2, 2, 22, 22)
+	end case
+    end for
+    cls
+    View.Set ("visible")
+end loadTexture
+
+var file : int
+open : file, "Texture.txr", read
+loadTexture (file)
 
 var playerNumber : int
 
@@ -87,16 +151,16 @@ procedure drawMap ()
     for i : 1 .. 40
 	for j : 1 .. 30
 	    case grid (i, j) of         % draws the different tiles
-		label - 2 :         % draws the different tiles || In an update, these will be replaced by pictures
-		    drawfillbox ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, black)         % wall
+		label - 2 :     % draws the different tiles
+		    Pic.Draw (wallPic, (i - 1) * 20, (j - 1) * 20, picCopy) % wall
 		label - 1 :
-		    drawfillbox ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, blue)         % water
+		    Pic.Draw (waterPic, (i - 1) * 20, (j - 1) * 20, picCopy) % water
 		label :
-		    drawbox ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, black)         % walkable
+		    Pic.Draw (emptyPic, (i - 1) * 20, (j - 1) * 20, picCopy) % walkable
 	    end case
 	    for k : 1 .. 4         % draws the player's positions from last playerNumber
 		if i = player (k).X and j = player (k).Y then
-		    drawfillstar ((i - 1) * 20 + 1, (j - 1) * 20 + 1, i * 20 - 1, j * 20 - 1, player (k).clr)
+		    Pic.Draw (playerPic (k), (i - 1) * 20, (j - 1) * 20, picCopy)
 		end if
 	    end for
 	end for
@@ -114,7 +178,21 @@ loop
 	label 1 :
 	    drawMap
 	    if moves > 0 then
-		Font.Draw ("Movement Stage", 900 - Font.Width ("Movement Stage", defFontID) div 2, 475, defFontID, black)
+		Font.Draw ("Movement Stage", 900 - Font.Width ("Movement Stage", defFontID) div 2, 550, defFontID, black)
+		% draws the texture
+		Font.Draw ("Wtr", 805, 475, defFontID, black)
+		Pic.Draw (waterPic, 805, 450, picCopy)
+		Font.Draw ("Wall", 840, 475, defFontID, black)
+		Pic.Draw (wallPic, 840, 450, picCopy)
+		Font.Draw ("P1", 875, 475, defFontID, black)
+		Pic.Draw (playerPic (1), 875, 450, picCopy)
+		Font.Draw ("P2", 910, 475, defFontID, black)
+		Pic.Draw (playerPic (2), 910, 450, picCopy)
+		Font.Draw ("P3", 945, 475, defFontID, black)
+		Pic.Draw (playerPic (3), 945, 450, picCopy)
+		Font.Draw ("P4", 980, 475, defFontID, black)
+		Pic.Draw (playerPic (4), 980, 450, picCopy)
+
 		Font.Draw ("Moves left: " + intstr (moves), 900 - Font.Width ("Moves left: " + intstr (moves), defFontID) div 2, 417, defFontID, black)
 		Font.Draw ("K/D: " + intstr (player (playerNumber).kills) + "/" + intstr (player (playerNumber).deaths), 900 - Font.Width ("K/D: " + intstr (player (playerNumber).kills) + "/"
 		    +
@@ -174,7 +252,21 @@ loop
 		10,
 		player (playerNumber).X * 20 - 10, player (playerNumber).Y * 20 - 10, player (playerNumber).clr)                % aiming line
 	    drawfillbox (800, 0, 1000, 600, white)         % clear the side panel
-	    Font.Draw ("Aiming Stage", 900 - Font.Width ("Aiming Stage", defFontID) div 2, 475, defFontID, black)
+	    Font.Draw ("Aiming Stage", 900 - Font.Width ("Aiming Stage", defFontID) div 2, 550, defFontID, black)
+	    % draws the texture
+	    Font.Draw ("Wtr", 805, 475, defFontID, black)
+	    Pic.Draw (waterPic, 805, 450, picCopy)
+	    Font.Draw ("Wall", 840, 475, defFontID, black)
+	    Pic.Draw (wallPic, 840, 450, picCopy)
+	    Font.Draw ("P1", 875, 475, defFontID, black)
+	    Pic.Draw (playerPic (1), 875, 450, picCopy)
+	    Font.Draw ("P2", 910, 475, defFontID, black)
+	    Pic.Draw (playerPic (2), 910, 450, picCopy)
+	    Font.Draw ("P3", 945, 475, defFontID, black)
+	    Pic.Draw (playerPic (3), 945, 450, picCopy)
+	    Font.Draw ("P4", 980, 475, defFontID, black)
+	    Pic.Draw (playerPic (4), 980, 450, picCopy)
+
 	    Font.Draw ("Angle: " + realstr (player (playerNumber).angle, 1), 825, 410, defFontID, black)
 	    % CCW box
 	    drawfillbox (805, 255, 995, 345, player (playerNumber).clr)
@@ -248,7 +340,20 @@ loop
 	    drawfillbox (800, 0, 1000, 600, white)         % clear the right-hand panel
 
 	    % output the results
-	    Font.Draw ("RESULTS", 900 - Font.Width ("RESULTS", defFontID) div 2, 475, defFontID, black)
+	    Font.Draw ("RESULTS", 900 - Font.Width ("RESULTS", defFontID) div 2, 550, defFontID, black)
+	    % draws the texture
+	    Font.Draw ("Wtr", 805, 475, defFontID, black)
+	    Pic.Draw (waterPic, 805, 450, picCopy)
+	    Font.Draw ("Wall", 840, 475, defFontID, black)
+	    Pic.Draw (wallPic, 840, 450, picCopy)
+	    Font.Draw ("P1", 875, 475, defFontID, black)
+	    Pic.Draw (playerPic (1), 875, 450, picCopy)
+	    Font.Draw ("P2", 910, 475, defFontID, black)
+	    Pic.Draw (playerPic (2), 910, 450, picCopy)
+	    Font.Draw ("P3", 945, 475, defFontID, black)
+	    Pic.Draw (playerPic (3), 945, 450, picCopy)
+	    Font.Draw ("P4", 980, 475, defFontID, black)
+	    Pic.Draw (playerPic (4), 980, 450, picCopy)
 
 	    if player (playerNumber).hit then
 		Font.Draw ("You were shot! Respawning :(", 900 - Font.Width ("You were shot! Respawning :(", defFontID) div 2, 450, defFontID, black)

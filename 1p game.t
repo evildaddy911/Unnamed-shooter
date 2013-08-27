@@ -17,7 +17,72 @@ var player : array 1 .. 4 of
 	lastMove : int % which direction player moved last (used for AI)
     end record
 
+var emptyPic, waterPic, wallPic : int
+var playerPic : array 1 .. 4 of int
+
+procedure loadTexture (file : int) % loads the texture
+    View.Set ("invisible")
+    var empty_, water, wall : array 1 .. 10, 1 .. 10 of int
+    var player : array 1 .. 4, 1 .. 10, 1 .. 10 of int
+    for x : 1 .. 10
+	for y : 1 .. 10
+	    read : file, empty_ (x, y)
+	    read : file, water (x, y)
+	    read : file, wall (x, y)
+	    for i : 1 .. 4
+		read : file, player (i, x, y)
+	    end for
+	end for
+    end for
+    close : file
+
+    for tile : 1 .. 7
+	for x : 1 .. 10     % draws each square of the selected tile
+	    for y : 1 .. 10
+		case tile of
+		    label 1 :
+			drawfillbox (x * 2, y * 2, x * 2 + 2, y * 2 + 2, empty_ (x, y))
+		    label 2 :
+			drawfillbox (x * 2, y * 2, x * 2 + 2, y * 2 + 2, water (x, y))
+		    label 3 :
+			drawfillbox (x * 2, y * 2, x * 2 + 2, y * 2 + 2, wall (x, y))
+		    label 4 :
+			drawfillbox (x * 2, y * 2, x * 2 + 2, y * 2 + 2, player (1, x, y))
+		    label 5 :
+			drawfillbox (x * 2, y * 2, x * 2 + 2, y * 2 + 2, player (2, x, y))
+		    label 6 :
+			drawfillbox (x * 2, y * 2, x * 2 + 2, y * 2 + 2, player (3, x, y))
+		    label :
+			drawfillbox (x * 2, y * 2, x * 2 + 2, y * 2 + 2, player (4, x, y))
+		end case
+	    end for
+	end for
+	case tile of
+	    label 1 :
+		emptyPic := Pic.New (2, 2, 22, 22)
+	    label 2 :
+		waterPic := Pic.New (2, 2, 22, 22)
+	    label 3 :
+		wallPic := Pic.New (2, 2, 22, 22)
+	    label 4 :
+		playerPic (1) := Pic.New (2, 2, 22, 22)
+	    label 5 :
+		playerPic (2) := Pic.New (2, 2, 22, 22)
+	    label 6 :
+		playerPic (3) := Pic.New (2, 2, 22, 22)
+	    label :
+		playerPic (4) := Pic.New (2, 2, 22, 22)
+	end case
+    end for
+    cls
+    View.Set ("visible")
+end loadTexture
+
+
 var file : int
+open : file, "Texture.txr", read
+loadTexture (file)
+
 var numMaps : int := 0
 loop
     exit when ~File.Exists (intstr (numMaps + 1) + ".map")
@@ -92,20 +157,20 @@ procedure drawMap ()
 	for j : 1 .. 30
 	    case grid (i, j) of     % draws the different tiles
 		label - 2 :     % draws the different tiles
-		    drawfillbox ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, black)     % wall
+		    Pic.Draw (wallPic, (i - 1) * 20, (j - 1) * 20, picCopy) % wall
 		label - 1 :
-		    drawfillbox ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, blue)     % water
+		    Pic.Draw (waterPic, (i - 1) * 20, (j - 1) * 20, picCopy) % water
 		label :
-		    drawbox ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, black)     % walkable
+		    Pic.Draw (emptyPic, (i - 1) * 20, (j - 1) * 20, picCopy) % walkable
 	    end case
 	    for k : 1 .. 4     % draws the player's positions from last turn
 		if k = turn then
 		    if i = player (k).nowX and j = player (k).nowY then
-			drawfillstar ((i - 1) * 20 + 1, (j - 1) * 20 + 1, i * 20 - 1, j * 20 - 1, player (k).clr)
+			Pic.Draw (playerPic (k), (i - 1) * 20, (j - 1) * 20, picCopy)
 		    end if
 		else
 		    if i = player (k).lastX and j = player (k).lastY then
-			drawfillstar ((i - 1) * 20 + 1, (j - 1) * 20 + 1, i * 20 - 1, j * 20 - 1, player (k).clr)
+			Pic.Draw (playerPic (k), (i - 1) * 20, (j - 1) * 20, picCopy)
 		    end if
 		end if
 	    end for
@@ -157,8 +222,8 @@ procedure AI (pNum : int)
 
     player (pNum).angle := realAngle (player (pNum).nowX, player (pNum).nowY, player (target).lastX, player (target).lastY)
     player (pNum).angle += (Rand.Real - 0.5) * 40         % puts the shot up to 20 degrees off of the targeted player's previous position
-    stage += 1
     moves := dist
+    stage := 3
 end AI
 
 var window : int
@@ -167,12 +232,29 @@ View.Set ("offscreenonly")
 loop
 
     mousewhere (now.x, now.y, now.b)
+    if turn > numPlayers then
+	AI (turn)
+    end if
     Font.Draw ("Player " + intstr (turn) + "'s turn", 900 - Font.Width ("Player " + intstr (turn) + "'s turn", defFontID) div 2, 575, defFontID, player (turn).clr)
     case stage of
 	label 1 :
 	    drawMap
 	    if moves > 0 then
-		Font.Draw ("Movement Stage", 900 - Font.Width ("Movement Stage", defFontID) div 2, 475, defFontID, black)
+		Font.Draw ("Movement Stage", 900 - Font.Width ("Movement Stage", defFontID) div 2, 550, defFontID, black)
+		% draws the texture
+		Font.Draw ("Wtr", 805, 475, defFontID, black)
+		Pic.Draw (waterPic, 805, 450, picCopy)
+		Font.Draw ("Wall", 840, 475, defFontID, black)
+		Pic.Draw (wallPic, 840, 450, picCopy)
+		Font.Draw ("P1", 875, 475, defFontID, black)
+		Pic.Draw (playerPic (1), 875, 450, picCopy)
+		Font.Draw ("P2", 910, 475, defFontID, black)
+		Pic.Draw (playerPic (2), 910, 450, picCopy)
+		Font.Draw ("P3", 945, 475, defFontID, black)
+		Pic.Draw (playerPic (3), 945, 450, picCopy)
+		Font.Draw ("P4", 980, 475, defFontID, black)
+		Pic.Draw (playerPic (4), 980, 450, picCopy)
+
 		Font.Draw ("Moves left: " + intstr (moves), 900 - Font.Width ("Moves left: " + intstr (moves), defFontID) div 2, 417, defFontID, black)
 		Font.Draw ("K/D: " + intstr (player (turn).kills) + "/" + intstr (player (turn).deaths), 900 - Font.Width ("K/D: " + intstr (player (turn).kills) + "/" +
 		    intstr (player (turn).deaths), defFontID) div 2, 403, defFontID, black)
@@ -235,8 +317,22 @@ loop
 	    drawMap
 	    drawline (round (500 * cosd (player (turn).angle)) + player (turn).nowX * 20 - 10, round (500 * sind (player (turn).angle)) + player (turn).nowY * 20 - 10, player (turn).nowX * 20 -
 		10, player (turn).nowY * 20 - 10, player (turn).clr)                    % aiming line
-	    drawfillbox (800, 0, 1000, 600, white)     % clear the side panel
-	    Font.Draw ("Aiming Stage", 900 - Font.Width ("Aiming Stage", defFontID) div 2, 475, defFontID, black)
+	    drawfillbox (801, 0, 1000, 600, white)     % clear the side panel
+	    Font.Draw ("Aiming Stage", 900 - Font.Width ("Aiming Stage", defFontID) div 2, 550, defFontID, black)
+	    % draws the texture
+	    Font.Draw ("Wtr", 805, 475, defFontID, black)
+	    Pic.Draw (waterPic, 805, 450, picCopy)
+	    Font.Draw ("Wall", 840, 475, defFontID, black)
+	    Pic.Draw (wallPic, 840, 450, picCopy)
+	    Font.Draw ("P1", 875, 475, defFontID, black)
+	    Pic.Draw (playerPic (1), 875, 450, picCopy)
+	    Font.Draw ("P2", 910, 475, defFontID, black)
+	    Pic.Draw (playerPic (2), 910, 450, picCopy)
+	    Font.Draw ("P3", 945, 475, defFontID, black)
+	    Pic.Draw (playerPic (3), 945, 450, picCopy)
+	    Font.Draw ("P4", 980, 475, defFontID, black)
+	    Pic.Draw (playerPic (4), 980, 450, picCopy)
+
 	    Font.Draw ("K/D: " + intstr (player (turn).kills) + "/" + intstr (player (turn).deaths), 900 - Font.Width ("K/D: " + intstr (player (turn).kills) + "/" +
 		intstr (player (turn).deaths), defFontID) div 2, 403, defFontID, black)
 	    Font.Draw ("Angle: " + realstr (player (turn).angle, 1), 825, 417, defFontID, black)
@@ -276,9 +372,6 @@ loop
 
 	label :
 	    if turn = 4 then     % checks if its time to output the results
-		for i : numPlayers .. 4
-		    AI (i)
-		end for
 		for i : 1 .. 4
 		    % move players to their new positions
 		    player (i).lastX := player (i).nowX
@@ -289,7 +382,7 @@ loop
 		    drawline (round (750 * cosd (player (i).angle)) + player (i).nowX * 20 - 10, round (750 * sind (player (i).angle)) + player (i).nowY * 20 - 10, player (i).nowX * 20 - 10,
 			player (i).nowY * 20 - 10, player (i).clr)     % shot line
 		end for
-		drawfillbox (800, 0, 1000, 600, white)     % clear the right-hand panel
+		drawfillbox (801, 0, 1000, 600, white)     % clear the right-hand panel
 
 		for i : 1 .. 4
 		    % check for any kills
@@ -321,7 +414,21 @@ loop
 		end for
 
 		% output the results
-		Font.Draw ("RESULTS", 900 - Font.Width ("RESULTS", defFontID) div 2, 475, defFontID, black)
+		Font.Draw ("RESULTS", 900 - Font.Width ("RESULTS", defFontID) div 2, 550, defFontID, black)
+		% draws the texture
+		Font.Draw ("Wtr", 805, 475, defFontID, black)
+		Pic.Draw (waterPic, 805, 450, picCopy)
+		Font.Draw ("Wall", 840, 475, defFontID, black)
+		Pic.Draw (wallPic, 840, 450, picCopy)
+		Font.Draw ("P1", 875, 475, defFontID, black)
+		Pic.Draw (playerPic (1), 875, 450, picCopy)
+		Font.Draw ("P2", 910, 475, defFontID, black)
+		Pic.Draw (playerPic (2), 910, 450, picCopy)
+		Font.Draw ("P3", 945, 475, defFontID, black)
+		Pic.Draw (playerPic (3), 945, 450, picCopy)
+		Font.Draw ("P4", 980, 475, defFontID, black)
+		Pic.Draw (playerPic (4), 980, 450, picCopy)
+
 		Font.Draw ("Player 1 K/D: " + intstr (player (1).kills) + "/" + intstr (player (1).deaths), 810, 400, defFontID, black)
 		Font.Draw ("Player 2 K/D: " + intstr (player (2).kills) + "/" + intstr (player (2).deaths), 810, 375, defFontID, black)
 		Font.Draw ("Player 3 K/D: " + intstr (player (3).kills) + "/" + intstr (player (3).deaths), 810, 350, defFontID, black)
@@ -357,7 +464,7 @@ loop
 	getch (k)
 	if k = "`" then % cheats!!
 	    for i : 1 .. 4
-		drawfilloval (player (i).nowX * 20 - 10, player (i).nowY * 20 - 10, 5, 5, player (i).clr)
+		drawfilloval (player (i).nowX * 20 - 10, player (i).nowY * 20 - 10, 5, 5, player (i).clr) % location
 		drawline (round (500 * cosd (player (i).angle)) + player (i).nowX * 20 - 10, round (500 * sind (player (i).angle)) + player (i).nowY * 20 - 10, player (i).nowX * 20 -
 		    10, player (i).nowY * 20 - 10, player (i).clr) % aiming line
 	    end for

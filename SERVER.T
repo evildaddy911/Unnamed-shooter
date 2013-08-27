@@ -99,7 +99,7 @@ loop
 	numPlayers := strint (ans)
 	exit
     end if
-    put "Invalid input. Must be an integer from 1-4"
+    put "Invalid input. Must be an integer from 1 to 4"
 end loop
 
 put "Server is now online. Waiting for players..."

@@ -21,5 +21,37 @@ If multiple players move to the same spot, both will be awarded a kill and a dea
 Black tiles are walls and stop bullets
 Blue tiles are water and are unpassable by players, but bullets go right over top of them
 White tiles are the only thing that players can move on
-Each player is represented by a different coloured star:
-	P1: blue, P2: red, P3: green, P4: cyan
+
+
+
+- EXTRAS -
+'map maker.t'
+Used to create new maps
+
+- Left-click: clears tile
+- Middle-click: adds a water tile
+- Right-click: adds a wall
+
+- hover over a square and press 1-4 to place a spawn point
+-> this is where each player will spawn at the beginning and when they are shot.
+-> Each player must have their own spawn point and cannot share spawns
+
+Press enter when you are finished
+Just follow the instructions on screen!
+
+The SERVER (or 1p game) must have at least one file named '[map#].map'
+-----------------
+
+'texture maker.t'
+Used to create texture packs
+
+- Click on the quare you want to edit
+- click on the color you want it to be
+- Press P to go to the next texture
+- press Q to save
+
+The texture you will be using MUST be named 'Texture.txr'
+
+Each CLIENT must have their own texture pack, but it can differ from client to client
+-> The server has no need of any texture packs
+ 
