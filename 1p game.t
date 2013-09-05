@@ -1,15 +1,15 @@
 View.Set ("graphics:1000,600")
 
-var now, last :
+var mouseNow, mouseLast :
     record
 	x, y, b : int
     end record
-var grid : array 1 .. 40, 1 .. 30 of int % 0=walkable; -1=bullets can pass; -2=wall; >0=player spawn
+var grid : array 1 .. 40, 1 .. 30 of int % 0=walkable; -1=water; -2=wall; >0=player spawn
 var player : array 1 .. 4 of
     record
 	deaths, kills : int % #times been shot; #shots hit
 	hit : boolean % if player has been hit this round
-	lastX, lastY : int % where player was last turn
+	prevX, prevY : array 1 .. 3 of int % where player was last 3 turns
 	nowX, nowY : int % where player is now
 	spawnX, spawnY : int % where player spawns
 	clr : int % which color to draw player in
@@ -75,7 +75,7 @@ procedure loadTexture (file : int) % loads the texture
 	end case
     end for
     cls
-    View.Set ("visible")
+    View.Set ("popup")
 end loadTexture
 
 
@@ -111,22 +111,24 @@ for i : 1 .. 4
     player (i).deaths := 0
     player (i).kills := 0
     player (i).hit := false
-    player (i).lastX := player (i).spawnX
-    player (i).lastY := player (i).spawnY
+    for j : 1 .. 3
+	player (i).prevX (j) := player (i).spawnX
+	player (i).prevY (j) := player (i).spawnY
+    end for
     player (i).nowX := player (i).spawnX
     player (i).nowY := player (i).spawnY
     player (i).angle := 0
     player (i).lastMove := Rand.Int (1, 4)
 end for
 
-const dist : int := 8     % #squares player can move in one turn
+const dist : int := 4     % #squares player can move in one turn
 const accuracy : real := 1     % #degrees [not used]
 var turn : int := 1     % whose turn it is
 var stage : int := 1     % which part of the turn it is (move / aim)
 var moves : int := dist     % how many moves left
 var numPlayers : int % how many human players
 var ans : string % used for text-based questions
-put "how many human players (1-4)?"
+put "How many human players (1-4)?"
 loop
     get ans
     exit when strintok (ans) and strint (ans) >= 1 and strint (ans) <= 4
@@ -169,7 +171,7 @@ procedure drawMap ()
 			Pic.Draw (playerPic (k), (i - 1) * 20, (j - 1) * 20, picCopy)
 		    end if
 		else
-		    if i = player (k).lastX and j = player (k).lastY then
+		    if i = player (k).prevX (3) and j = player (k).prevY (3) then
 			Pic.Draw (playerPic (k), (i - 1) * 20, (j - 1) * 20, picCopy)
 		    end if
 		end if
@@ -220,8 +222,12 @@ procedure AI (pNum : int)
 	exit when target ~= pNum
     end loop
 
-    player (pNum).angle := realAngle (player (pNum).nowX, player (pNum).nowY, player (target).lastX, player (target).lastY)
-    player (pNum).angle += (Rand.Real - 0.5) * 40         % puts the shot up to 20 degrees off of the targeted player's previous position
+    var moveAngle : real := realAngle (player (target).prevX (1), player (target).prevY (1), player (target).prevX (3), player (target).prevY (3))
+    var aimX : int := round (Rand.Real * dist * cosd (moveAngle) + player (target).prevX (3))
+    var aimY : int := round (Rand.Real * dist * cosd (moveAngle) + player (target).prevY (3))
+    player (pNum).angle := realAngle (player (pNum).nowX, player (pNum).nowY, aimX, aimY)
+
+    % puts the shot up to 'dist' blocks off of the targeted player's previous position
     moves := dist
     stage := 3
 end AI
@@ -231,7 +237,7 @@ var window : int
 View.Set ("offscreenonly")
 loop
 
-    mousewhere (now.x, now.y, now.b)
+    mousewhere (mouseNow.x, mouseNow.y, mouseNow.b)
     if turn > numPlayers then
 	AI (turn)
     end if
@@ -283,31 +289,31 @@ loop
 		Font.Draw ("DONE", 900 - Font.Width ("DONE", defFontID) div 2, 45, defFontID, black)
 
 		% checks for the buttons being clicked, makes sure it is valid move, then moves player
-		if now.b ~= 0 and last.b = 0 then
-		    if now.x > 855 and now.x < 945 and now.y > 305 and now.y < 395 and player (turn).nowY < 30 and grid (player (turn).nowX, player (turn).nowY + 1) >= 0 then
+		if mouseNow.b ~= 0 and mouseLast.b = 0 then
+		    if mouseNow.x > 855 and mouseNow.x < 945 and mouseNow.y > 305 and mouseNow.y < 395 and player (turn).nowY < 30 and grid (player (turn).nowX, player (turn).nowY + 1) >= 0 then
 			moves -= 1
 			player (turn).nowY += 1
 		    end if
-		    if now.x > 805 and now.x < 895 and now.y > 205 and now.y < 295 and player (turn).nowX > 1 and grid (player (turn).nowX - 1, player (turn).nowY) >= 0 then
+		    if mouseNow.x > 805 and mouseNow.x < 895 and mouseNow.y > 205 and mouseNow.y < 295 and player (turn).nowX > 1 and grid (player (turn).nowX - 1, player (turn).nowY) >= 0 then
 			moves -= 1
 			player (turn).nowX -= 1
 		    end if
-		    if now.x > 905 and now.x < 995 and now.y > 205 and now.y < 295 and player (turn).nowX < 40 and grid (player (turn).nowX + 1, player (turn).nowY) >= 0 then
+		    if mouseNow.x > 905 and mouseNow.x < 995 and mouseNow.y > 205 and mouseNow.y < 295 and player (turn).nowX < 40 and grid (player (turn).nowX + 1, player (turn).nowY) >= 0 then
 			moves -= 1
 			player (turn).nowX += 1
 		    end if
-		    if now.x > 855 and now.x < 945 and now.y > 105 and now.y < 195 and player (turn).nowY > 1 and grid (player (turn).nowX, player (turn).nowY - 1) >= 0 then
+		    if mouseNow.x > 855 and mouseNow.x < 945 and mouseNow.y > 105 and mouseNow.y < 195 and player (turn).nowY > 1 and grid (player (turn).nowX, player (turn).nowY - 1) >= 0 then
 			moves -= 1
 			player (turn).nowY -= 1
 		    end if
-		    if now.x > 805 and now.x < 995 and now.y > 5 and now.y < 95 then
+		    if mouseNow.x > 805 and mouseNow.x < 995 and mouseNow.y > 5 and mouseNow.y < 95 then
 			moves := -1
 		    end if
 		end if
 	    else
 		loop     % makes sure you don't accidentally click anything in the next stage
-		    mousewhere (now.x, now.y, now.b)
-		    exit when now.b = 0
+		    mousewhere (mouseNow.x, mouseNow.y, mouseNow.b)
+		    exit when mouseNow.b = 0
 		end loop
 		moves := dist
 		stage := 2
@@ -347,23 +353,23 @@ loop
 	    Font.Draw ("DONE", 900 - Font.Width ("DONE", defFontID) div 2, 95, defFontID, black)
 
 	    % checks for buttons being clicked
-	    if now.b ~= 0 then
-		if now.x > 805 and now.x < 995 and now.y > 255 and now.y < 345 then
+	    if mouseNow.b ~= 0 then
+		if mouseNow.x > 805 and mouseNow.x < 995 and mouseNow.y > 255 and mouseNow.y < 345 then
 		    player (turn).angle := player (turn).angle + 0.5
 		    if player (turn).angle > 360 then     % keeps angle under 360
 			player (turn).angle -= 360
 		    end if
 		end if
-		if now.x > 805 and now.x < 995 and now.y > 155 and now.y < 245 then
+		if mouseNow.x > 805 and mouseNow.x < 995 and mouseNow.y > 155 and mouseNow.y < 245 then
 		    player (turn).angle := player (turn).angle - 0.5
 		    if player (turn).angle < 0 then
 			player (turn).angle += 360     % keeps angle positive
 		    end if
 		end if
-		if now.x > 805 and now.x < 995 and now.y > 55 and now.y < 145 then
+		if mouseNow.x > 805 and mouseNow.x < 995 and mouseNow.y > 55 and mouseNow.y < 145 then
 		    loop     % makes sure you don't accidentally click anything in the next stage
-			mousewhere (now.x, now.y, now.b)
-			exit when now.b = 0
+			mousewhere (mouseNow.x, mouseNow.y, mouseNow.b)
+			exit when mouseNow.b = 0
 		    end loop
 		    moves := dist
 		    stage := 3
@@ -374,12 +380,16 @@ loop
 	    if turn = 4 then     % checks if its time to output the results
 		for i : 1 .. 4
 		    % move players to their new positions
-		    player (i).lastX := player (i).nowX
-		    player (i).lastY := player (i).nowY
+		    player (i).prevX (1) := player (i).prevX (2)
+		    player (i).prevY (1) := player (i).prevY (2)
+		    player (i).prevX (2) := player (i).prevX (3)
+		    player (i).prevY (2) := player (i).prevY (3)
+		    player (i).prevX (3) := player (i).nowX
+		    player (i).prevY (3) := player (i).nowY
 		end for
 		drawMap     % redraw the map
 		for i : 1 .. 4     % draw the shot lines
-		    drawline (round (750 * cosd (player (i).angle)) + player (i).nowX * 20 - 10, round (750 * sind (player (i).angle)) + player (i).nowY * 20 - 10, player (i).nowX * 20 - 10,
+		    drawline (round (1000 * cosd (player (i).angle)) + player (i).nowX * 20 - 10, round (1000 * sind (player (i).angle)) + player (i).nowY * 20 - 10, player (i).nowX * 20 - 10,
 			player (i).nowY * 20 - 10, player (i).clr)     % shot line
 		end for
 		drawfillbox (801, 0, 1000, 600, white)     % clear the right-hand panel
@@ -407,8 +417,10 @@ loop
 		    if player (i).hit then
 			player (i).nowX := player (i).spawnX
 			player (i).nowY := player (i).spawnY
-			player (i).lastX := player (i).spawnX
-			player (i).lastY := player (i).spawnY
+			for j : 1 .. 3
+			    player (i).prevX (j) := player (i).spawnX
+			    player (i).prevY (j) := player (i).spawnY
+			end for
 		    end if
 		    player (i).hit := false
 		end for
@@ -438,13 +450,13 @@ loop
 		Font.Draw ("Next Turn", 900 - Font.Width ("Next Turn", defFontID) div 2, 245, defFontID, white)
 		View.Update
 		loop
-		    mousewhere (now.x, now.y, now.b)
-		    if now.b ~= 0 and now.x > 805 and now.x < 995 and now.y > 200 and now.y < 300 then
+		    mousewhere (mouseNow.x, mouseNow.y, mouseNow.b)
+		    if mouseNow.b ~= 0 and mouseNow.x > 805 and mouseNow.x < 995 and mouseNow.y > 200 and mouseNow.y < 300 then
 			turn := 1
 			stage := 1
 			loop
-			    mousewhere (now.x, now.y, now.b)
-			    exit when now.b = 0
+			    mousewhere (mouseNow.x, mouseNow.y, mouseNow.b)
+			    exit when mouseNow.b = 0
 			end loop
 			exit
 		    end if
@@ -472,7 +484,7 @@ loop
     end if
 
     View.Update
-    last := now
+    mouseLast := mouseNow
     cls
 end loop
 
