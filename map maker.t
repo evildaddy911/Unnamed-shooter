@@ -129,14 +129,14 @@ loop
 		numMaps += 1
 	    end loop
 	    var file : int
-	    open : file, intstr (numMaps + 1) + ".map", write
+	    open : file, intstr (numMaps) + ".map", write
 	    for x : 1 .. 40
 		for y : 1 .. 30
 		    write : file, map (x, y)
 		end for
 	    end for
 	    close : file
-	    Pic.Save (Pic.Scale (Pic.New (0, 0, 800, 600), 80, 60), intstr (numMaps + 1) + ".bmp")
+	    Pic.Save (Pic.New (0, 0, 800, 600), intstr (numMaps + 1) + ".bmp")
 	    exit
 	end if
     end loop
