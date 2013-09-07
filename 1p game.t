@@ -123,7 +123,7 @@ for i : 1 .. 4
     player (i).lastMove := Rand.Int (1, 4)
 end for
 
-const dist : int := 2     % #squares player can move in one turn
+const dist : int := 5     % #squares player can move in one turn
 const accuracy : real := 1     % #degrees [not used]
 var turn : int := 1     % whose turn it is
 var stage : int := 1     % which part of the turn it is (move / aim)
@@ -277,26 +277,26 @@ procedure AI (pNum : int)
     var aim : COORDS % which square to aim at
     var moveAngle : real % which direction the target has been travelling the past 2 turns
 
-    if player (target).prev (1) = player (target).prev (3) then
+    if player (target).prev (1).x = player (target).prev (3).x and player (target).prev (1).y = player (target).prev (3).y then
 	moveAngle := Rand.Real * 360 % if the player is in the same location it was 2 turns ago (or if it has just respawned)
     else % extrapolates target's previous locations to determine where it might be this turn
 	moveAngle := realAngle (player (target).prev (1).x, player (target).prev (1).y, player (target).prev (3).x, player (target).prev (3).y)
     end if
 
     var likelyMoves : flexible array 1 .. 0 of COORDS % cross-reference the moveList with the direction the target has traveled the previous 2 turns
-    for d : 1 .. dist
+    for d : 0 .. 2 * dist % makes sure it gets every square
 	for m : 1 .. upper (moveList)
-	    if movelist (m).x = round (d * cosd (moveAngle)) + player (target).prev.x and movelist (m).y = round (d * cosd (moveAngle)) + player (target).prev.y then
+	    if moveList (m).x = round (d / 2 * cosd (moveAngle)) + player (target).prev (3).x and moveList (m).y = round (d / 2 * cosd (moveAngle)) + player (target).prev (3).y then
 		new likelyMoves, upper (likelyMoves) + 1
-		likelyMoves (upper (likelyMoves)) = moveList (m)
+		likelyMoves (upper (likelyMoves)) := moveList (m)
 	    end if
 	end for
     end for
 
     if upper (likelyMoves) = 0 then % if there was no matches
-	aim := moveList (Rand.Int (1, upper (MoveList))
-    else
-	aim := likelyMoves (Rand.Int (1, upper (likelyMoves))
+	aim := moveList (Rand.Int (1, upper (moveList)))
+    else % choose a random location from the likely list
+	aim := likelyMoves (Rand.Int (1, upper (likelyMoves)))
     end if
 
     player (pNum).angle := realAngle (player (pNum).now.x, player (pNum).now.y, aim.x, aim.y)
