@@ -243,69 +243,105 @@ procedure AI (pNum : int)
     /*
      CURRENT AI AIMING DETAILS
 
-     - uses the 2 previous turns to determine the target's direction of travel
-     - creates a list of all possible locations the target could be in
-     - cross-references that array with the direction of travel to make a list of most likely locations for the target
-     - chooses a random element of that list to target
-     -- if the likelyMoves array is empty (target cannot move any further in that direction), choose a random element of the moveList
+     1- chooses a random target
+     2- uses the 2 previous turns to determine the target's direction of travel
+     3- creates a list of all possible locations the target could be in
+     4- cross-references that array with the direction of travel to make a list of most likely locations for the target
+     5- if the likelyMoves array is empty, fill it with any possible moves
+     6- creates an array with locations that are hittable from pNum's location and are also in the likelyMoves array
+     7- if the hittable array is empty, repeat steps 1 through 7 for a maximum of 0.75 seconds
      */
 
-    var target : int         % which player to target this turn
-    loop         % don't allow CPU to target itself
-	target := Rand.Int (1, 4)
-	exit when target ~= pNum
-    end loop
-
-    var move : array 1 .. 40, 1 .. 30 of boolean % stores which squares are accessible to the target
-    for x : 1 .. 40
-	for y : 1 .. 30
-	    move (x, y) := false % set all to false for now
-	end for
-    end for
-
-    listMoves (player (target).prev (3).x, player (target).prev (3).y, dist, move)
-    var moveList : flexible array 1 .. 0 of COORDS
-    for x : 1 .. 40
-	for y : 1 .. 30
-	    if move (x, y) then % uses the move array to create a list of possible moves
-		new moveList, upper (moveList) + 1
-		moveList (upper (moveList)).x := x
-		moveList (upper (moveList)).y := y
-	    end if
-	end for
-    end for
     var aim : COORDS % which square to aim at
-    var moveAngle : real % which direction the target has been travelling the past 2 turns
+    var startTime : int := Time.Elapsed % used to set a time limit on the AI
+    loop
+	var target : int     % which player to target this turn
+	loop     % don't allow CPU to target itself
+	    target := Rand.Int (1, 4)
+	    exit when target ~= pNum
+	end loop
 
-    if player (target).prev (1).x = player (target).prev (3).x and player (target).prev (1).y = player (target).prev (3).y then
-	moveAngle := Rand.Real * 360 % if the player is in the same location it was 2 turns ago (or if it has just respawned)
-    else % extrapolates target's previous locations to determine where it might be this turn
-	moveAngle := realAngle (player (target).prev (1).x, player (target).prev (1).y, player (target).prev (3).x, player (target).prev (3).y)
-    end if
-
-    var likelyMoves : flexible array 1 .. 0 of COORDS % cross-reference the moveList with the direction the target has traveled the previous 2 turns
-    for d : 0 .. 2 * dist % makes sure it gets every square
-	for m : 1 .. upper (moveList)
-	    if moveList (m).x = round (d / 2 * cosd (moveAngle)) + player (target).prev (3).x and moveList (m).y = round (d / 2 * cosd (moveAngle)) + player (target).prev (3).y then
-		new likelyMoves, upper (likelyMoves) + 1
-		likelyMoves (upper (likelyMoves)) := moveList (m)
-	    end if
+	var move : array 1 .. 40, 1 .. 30 of boolean % stores which squares are accessible to the target
+	for x : 1 .. 40
+	    for y : 1 .. 30
+		move (x, y) := false % set all to false for now
+	    end for
 	end for
-    end for
 
-    if upper (likelyMoves) = 0 then % if there was no matches
-	aim := moveList (Rand.Int (1, upper (moveList)))
-    else % choose a random location from the likely list
-	aim := likelyMoves (Rand.Int (1, upper (likelyMoves)))
-    end if
+	listMoves (player (target).prev (3).x, player (target).prev (3).y, dist, move)
+	var moveList : flexible array 1 .. 0 of COORDS
+	for x : 1 .. 40
+	    for y : 1 .. 30
+		if move (x, y) then % uses the move array to create a list of possible moves
+		    new moveList, upper (moveList) + 1
+		    moveList (upper (moveList)).x := x
+		    moveList (upper (moveList)).y := y
+		end if
+	    end for
+	end for
+	var moveAngle : real % which direction the target has been travelling the past 2 turns
 
-    player (pNum).angle := realAngle (player (pNum).now.x, player (pNum).now.y, aim.x, aim.y)
+	if player (target).prev (1).x = player (target).prev (3).x and player (target).prev (1).y = player (target).prev (3).y then
+	    moveAngle := Rand.Real * 360 % if the player is in the same location it was 2 turns ago (or if it has just respawned)
+	else % extrapolates target's previous locations to determine where it might be this turn
+	    moveAngle := realAngle (player (target).prev (1).x, player (target).prev (1).y, player (target).prev (3).x, player (target).prev (3).y)
+	end if
 
+	var likelyMoves : flexible array 1 .. 0 of COORDS % cross-reference the moveList with the direction the target has traveled the previous 2 turns
+	for d : 0 .. 2 * dist % makes sure it gets every square
+	    for m : 1 .. upper (moveList)
+		if moveList (m).x = round (d / 2 * cosd (moveAngle)) + player (target).prev (3).x and moveList (m).y = round (d / 2 * cosd (moveAngle)) + player (target).prev (3).y then
+		    new likelyMoves, upper (likelyMoves) + 1
+		    likelyMoves (upper (likelyMoves)) := moveList (m)
+		end if
+	    end for
+	end for
+
+	if upper (likelyMoves) = 0 then
+	    % if the target cannot continue travelling the same direction, target a moveable location that is also hittable
+	    new likelyMoves, upper (moveList)
+	    for i : 1 .. upper (moveList)
+		likelyMoves (i) := moveList (i)
+	    end for
+	end if
+
+	% create a create a list of hittable locations also in the likelyMoves list
+	var hittable : flexible array 1 .. 0 of COORDS
+	var blt :
+	    record
+		x, y : real
+	    end record
+	for i : 1 .. upper (likelyMoves)
+	    var angle : real := realAngle (player (pNum).now.x, player (pNum).now.y, likelyMoves (i).x, likelyMoves (i).y)
+	    blt.x := player (pNum).now.x
+	    blt.y := player (pNum).now.y
+
+	    loop
+		blt.x += .5 * cosd (angle)
+		blt.y += .5 * sind (angle)
+		exit when blt.x < 1 or blt.x > 40 or blt.y < 0 or blt.y > 30 or grid (round (blt.x), round (blt.y)) = -2   % exit when a bullet hits a wall or exits the grid
+		if round (blt.x) = likelyMoves (i).x and round (blt.y) = likelyMoves (i).y then
+		    % if the bullet hits the target square before hitting a wall, add the location to the hittable array
+		    new hittable, upper (hittable) + 1
+		    hittable (upper (hittable)) := likelyMoves (i)
+		    exit
+		end if
+	    end loop
+	end for
+
+	if upper (hittable) ~= 0 then
+	    % exit when there is a hittable location
+	    aim := hittable (Rand.Int (1, upper (hittable)))
+	    player (pNum).angle := realAngle (player (pNum).now.x, player (pNum).now.y, aim.x, aim.y)
+	    exit
+	end if
+
+	exit when Time.Elapsed - startTime >= 750 % maximum of 0.75 seconds per CPU player
+
+    end loop
     moves := dist
     stage := 3
 end AI
-
-var window : int
 
 View.Set ("offscreenonly")
 loop
