@@ -1,5 +1,5 @@
 var empty_, water, wall : array 1 .. 10, 1 .. 10 of int
-var player : array 1 .. 4, 1 .. 10, 1 .. 10 of int
+var player : array 1 .. 10, 1 .. 10, 1 .. 10 of int
 
 if File.Exists ("Texture.txr") then
     var file : int
@@ -9,7 +9,7 @@ if File.Exists ("Texture.txr") then
 	    read : file, empty_ (x, y)
 	    read : file, water (x, y)
 	    read : file, wall (x, y)
-	    for i : 1 .. 4
+	    for i : 1 .. 10
 		read : file, player (i, x, y)
 	    end for
 	end for
@@ -21,7 +21,7 @@ else
 	    empty_ (x, y) := 0
 	    water (x, y) := 0
 	    wall (x, y) := 0
-	    for i : 1 .. 4
+	    for i : 1 .. 10
 		player (i, x, y) := 0
 	    end for
 	end for
@@ -66,9 +66,27 @@ loop
 		label 6 :
 		    msg := "Player 3"
 		    drawfillbox (x * 50 + 100, y * 50 + 25, x * 50 + 150, y * 50 + 75, player (3, x, y))
-		label :
+		label 7 :
 		    msg := "Player 4"
 		    drawfillbox (x * 50 + 100, y * 50 + 25, x * 50 + 150, y * 50 + 75, player (4, x, y))
+		label 8 :
+		    msg := "Player 5"
+		    drawfillbox (x * 50 + 100, y * 50 + 25, x * 50 + 150, y * 50 + 75, player (5, x, y))
+		label 9 :
+		    msg := "Player 6"
+		    drawfillbox (x * 50 + 100, y * 50 + 25, x * 50 + 150, y * 50 + 75, player (6, x, y))
+		label 10 :
+		    msg := "Player 7"
+		    drawfillbox (x * 50 + 100, y * 50 + 25, x * 50 + 150, y * 50 + 75, player (7, x, y))
+		label 11 :
+		    msg := "Player 8"
+		    drawfillbox (x * 50 + 100, y * 50 + 25, x * 50 + 150, y * 50 + 75, player (8, x, y))
+		label 12 :
+		    msg := "Player 9"
+		    drawfillbox (x * 50 + 100, y * 50 + 25, x * 50 + 150, y * 50 + 75, player (9, x, y))
+		label :
+		    msg := "Player 10"
+		    drawfillbox (x * 50 + 100, y * 50 + 25, x * 50 + 150, y * 50 + 75, player (10, x, y))
 	    end case
 	    drawbox (x * 50 + 100, y * 50 + 25, x * 50 + 150, y * 50 + 75, black) % draws outline around box
 	end for
@@ -98,8 +116,20 @@ loop
 		    player (2, editCoords (1), editCoords (2)) := (mx - 5) div 3
 		label 6 :
 		    player (3, editCoords (1), editCoords (2)) := (mx - 5) div 3
-		label :
+		label 7 :
 		    player (4, editCoords (1), editCoords (2)) := (mx - 5) div 3
+		label 8 :
+		    player (5, editCoords (1), editCoords (2)) := (mx - 5) div 3
+		label 9 :
+		    player (6, editCoords (1), editCoords (2)) := (mx - 5) div 3
+		label 10 :
+		    player (7, editCoords (1), editCoords (2)) := (mx - 5) div 3
+		label 11 :
+		    player (8, editCoords (1), editCoords (2)) := (mx - 5) div 3
+		label 12 :
+		    player (9, editCoords (1), editCoords (2)) := (mx - 5) div 3
+		label :
+		    player (10, editCoords (1), editCoords (2)) := (mx - 5) div 3
 	    end case
 	end if
 	if mx >= 150 and mx <= 650 and my >= 75 and my <= 575 then % switches editing square
@@ -119,7 +149,7 @@ loop
 
     if key = "p" then % switch tiles
 	editing += 1
-	if editing > 7 then
+	if editing > 13 then
 	    editing := 1
 	end if
     end if
@@ -138,7 +168,7 @@ for x : 1 .. 10
 	write : file, empty_ (x, y)
 	write : file, water (x, y)
 	write : file, wall (x, y)
-	for i : 1 .. 4
+	for i : 1 .. 10
 	    write : file, player (i, x, y)
 	end for
     end for

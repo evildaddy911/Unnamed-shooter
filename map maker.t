@@ -40,6 +40,18 @@ loop
 			drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, brightgreen)
 		    label 4 :
 			drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, brightcyan)
+		    label 5 :
+			drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, purple)
+		    label 6 :
+			drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, grey)
+		    label 7 :
+			drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, black)
+		    label 8 :
+			drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, brightmagenta)
+		    label 9 :
+			drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, yellow)
+		    label 10 :
+			drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, brown)
 		    label :
 		end case
 	    end for
@@ -82,6 +94,60 @@ loop
 		    end for
 		end for
 		map (mx div 20 + 1, my div 20 + 1) := 4
+	    elsif keys ('5') then
+		for i : 1 .. 40
+		    for j : 1 .. 30
+			if map (i, j) = 5 then
+			    map (i, j) := 0
+			end if
+		    end for
+		end for
+		map (mx div 20 + 1, my div 20 + 1) := 5
+	    elsif keys ('6') then
+		for i : 1 .. 40
+		    for j : 1 .. 30
+			if map (i, j) = 6 then
+			    map (i, j) := 0
+			end if
+		    end for
+		end for
+		map (mx div 20 + 1, my div 20 + 1) := 6
+	    elsif keys ('7') then
+		for i : 1 .. 40
+		    for j : 1 .. 30
+			if map (i, j) = 7 then
+			    map (i, j) := 0
+			end if
+		    end for
+		end for
+		map (mx div 20 + 1, my div 20 + 1) := 7
+	    elsif keys ('8') then
+		for i : 1 .. 40
+		    for j : 1 .. 30
+			if map (i, j) = 8 then
+			    map (i, j) := 0
+			end if
+		    end for
+		end for
+		map (mx div 20 + 1, my div 20 + 1) := 8
+	    elsif keys ('9') then
+		for i : 1 .. 40
+		    for j : 1 .. 30
+			if map (i, j) = 9 then
+			    map (i, j) := 0
+			end if
+		    end for
+		end for
+		map (mx div 20 + 1, my div 20 + 1) := 9
+	    elsif keys ('0') then
+		for i : 1 .. 40
+		    for j : 1 .. 30
+			if map (i, j) = 10 then
+			    map (i, j) := 0
+			end if
+		    end for
+		end for
+		map (mx div 20 + 1, my div 20 + 1) := 10
 	    elsif mb >= 100 then
 		map (mx div 20 + 1, my div 20 + 1) := -2
 	    elsif mb >= 10 then
@@ -113,6 +179,18 @@ loop
 		    drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, brightgreen)
 		label 4 :
 		    drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, brightcyan)
+		label 5 :
+		    drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, purple)
+		label 6 :
+		    drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, grey)
+		label 7 :
+		    drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, black)
+		label 8 :
+		    drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, brightmagenta)
+		label 9 :
+		    drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, yellow)
+		label 10 :
+		    drawfillstar ((i - 1) * 20, (j - 1) * 20, i * 20, j * 20, brown)
 		label :
 	    end case
 	end for
@@ -136,10 +214,10 @@ loop
 		end for
 	    end for
 	    close : file
-	    Pic.Save (Pic.New (0, 0, 800, 600), intstr (numMaps + 1) + ".bmp")
+	    put "Texture saved as ", numMaps, ".map"
+
 	    exit
 	end if
     end loop
     exit when keys ('q')
 end loop
-
